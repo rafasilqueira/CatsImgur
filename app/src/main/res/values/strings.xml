@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Cats Test</string>
+    <string name="load_data">Wait Loading Data</string>
+    <string name="error_general">An error has occurred, please try again</string>
+</resources>
