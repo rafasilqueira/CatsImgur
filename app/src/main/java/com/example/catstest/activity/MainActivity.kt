@@ -1,21 +1,68 @@
 package com.example.catstest.activity
 
 import android.os.Bundle
+import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.example.catstest.R
 import com.example.catstest.adapter.PicturesAdapter
 import com.example.catstest.model.ImgurResponse
-import com.example.catstest.model.PictureInfo
-import com.example.catstest.retrofit.RetrofitConfig
-import com.example.catstest.utils.CallBackAPIResponse
+import com.example.catstest.viewmodel.CatsViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 
+const val THUMBNAILMEDIUM = "m"
 
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        const val AUTHORIZATION = "Client-ID 04e2c49522b2562"
-        const val THUMBNAILMEDIUM = "m"
+    private lateinit var catsViewModel: CatsViewModel
+    private val picturesAdapter = PicturesAdapter(this)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        catsViewModel = ViewModelProviders.of(this).get(CatsViewModel::class.java)
+        supportActionBar?.hide()
+        setContentView(R.layout.activity_main)
+        recyclerView.adapter = picturesAdapter
+        observeViewModel()
+        catsViewModel.fetch()
+    }
+
+    private fun observeViewModel() {
+        catsViewModel.apply {
+            imgurResponse.observe(this@MainActivity, Observer { observeData(it) })
+            isError.observe(this@MainActivity, Observer { observeError(it) })
+            loading.observe(this@MainActivity, Observer { observerLoadingDialog(it) })
+        }
+
+
+    }
+
+    private fun observerLoadingDialog(loading: Boolean) {
+        loading.let { progressBar.visibility = if (it) VISIBLE else GONE }
+
+        if (loading) {
+            recyclerView.visibility = GONE
+            txtError.visibility = GONE
+        }
+    }
+
+
+    private fun observeError(isError: Boolean) {
+        txtError.visibility = if (isError) VISIBLE else GONE
+    }
+
+    private fun observeData(imgurResponse: ImgurResponse) {
+        recyclerView.visibility = View.VISIBLE
+        val picturesList = imgurResponse.data.flatMap { pictureInfo -> pictureInfo.images }
+            .filter { images -> images.link.isNotEmpty() }
+            .filter { images -> images.type == "image/jpeg" }
+            .toMutableList()
+
+        picturesList.forEach { image -> image.link = getMediumThumbnailURL(image.link) }
+        picturesAdapter.updateData(picturesList)
     }
 
     //After add the "m" character before file extensions , achieve the Medium thumbnail URL
@@ -34,30 +81,4 @@ class MainActivity : AppCompatActivity() {
         return newString
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        supportActionBar?.hide()
-        setContentView(R.layout.activity_main)
-        loadData()
-    }
-
-    private fun loadData() {
-        RetrofitConfig().iRest().getCats(AUTHORIZATION)
-            .enqueue(object : CallBackAPIResponse<ImgurResponse>(this, true, true) {
-                override fun onSuccessfulResponse(response: ImgurResponse) {
-                    setupAdapter(response.data)
-                }
-            })
-    }
-
-    private fun setupAdapter(pictureInfoList: MutableList<PictureInfo>) {
-        val picturesList = pictureInfoList.flatMap { it.images }
-            .filter { it.link.isNotEmpty() }
-            .filter { it.type == "image/jpeg" }
-            .toMutableList()
-
-        picturesList.forEach { it.link = getMediumThumbnailURL(it.link) }
-        val picturesAdapter = PicturesAdapter(this, picturesList)
-        recyclerView.adapter = picturesAdapter
-    }
 }
