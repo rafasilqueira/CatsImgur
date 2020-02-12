@@ -1,6 +1,6 @@
 package com.example.catstest.di
 
-import com.example.catstest.model.ImgurService
+import com.example.catstest.service.ImgurService
 import com.example.catstest.viewmodel.CatsViewModel
 import dagger.Component
 

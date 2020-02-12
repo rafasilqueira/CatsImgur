@@ -4,7 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.catstest.di.DaggerApiComponent
 import com.example.catstest.model.ImgurResponse
-import com.example.catstest.model.ImgurService
+import com.example.catstest.service.ImgurService
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableSingleObserver
